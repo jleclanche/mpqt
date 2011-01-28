@@ -37,16 +37,14 @@ class MainWindow(QMainWindow):
 		
 		self.__addToolbar()
 		
-		#model = QFileSystemModel()
-		#model.setRootPath("")
+		self.model = MPQArchiveTreeModel()
 		
-		self.model = MPQArchiveModel()
-		#model.
+		#view = QListView()
+		view = QTreeView()
 		
-		tree = QTreeView()
-		tree.setModel(self.model)
-		tree.setSortingEnabled(True)
-		self.setCentralWidget(tree)
+		view.setModel(self.model)
+		view.setSortingEnabled(True)
+		self.setCentralWidget(view)
 		
 		#self.statusBar().showMessage("Ready") # perf leak!
 	
@@ -68,9 +66,6 @@ class MainWindow(QMainWindow):
 		fileMask = QLineEdit()
 		fileMask.setPlaceholderText("File mask")
 		toolbar.addWidget(fileMask)
-		#toolbar.addAction("Add File")
-		#toolbar.addAction("Add Folder")
-		#toolbar.addAction("Delete")
 	
 	def actionNew(self):
 		print "actionNew()"
@@ -79,9 +74,6 @@ class MainWindow(QMainWindow):
 		print "actionOpen()"
 
 
-COLUMN_NAME = 0
-COLUMN_SIZE = 1
-
 def hsize(i):
 	"Human-readable file size"
 	for x in ("%i", "%3.1f K", "%3.1f M", "%3.1f G", "%3.1f T"):
@@ -89,8 +81,41 @@ def hsize(i):
 			return x % (i)
 		i /= 1024.0
 
-class MPQArchiveModel(QAbstractItemModel):
-	_COLS = ("File Name", "Size")
+
+class MPQArchiveListModel(QAbstractListModel):
+	def __init__(self, *args):
+		QAbstractListModel.__init__(self, *args)
+		self.rows = []
+	
+	def data(self, index, role):
+		return "test"
+		print index.row()
+		file = self.rows[index.row()]
+		return file.plainpath
+	
+	def headerData(self, section, orientation, role):
+		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+			return "Name"
+		
+		return QAbstractItemModel.headerData(self, section, orientation, role)
+	
+	def rowCount(self, parent):
+		if parent.isValid():
+			return 0
+	
+	def setFile(self, file):
+		self.emit(SIGNAL("layoutAboutToBeChanged()"))
+		lf = file.list()
+		for i in range(10):
+			self.rows.append(lf.next())
+		self.emit(SIGNAL("layoutChanged()"))
+
+
+COLUMN_NAME = 0
+COLUMN_SIZE = 1
+
+class MPQArchiveTreeModel(QAbstractItemModel):
+	_COLS = ("Name", "Size")
 	
 	def __init__(self, *args):
 		QAbstractItemModel.__init__(self, *args)
@@ -115,10 +140,10 @@ class MPQArchiveModel(QAbstractItemModel):
 		
 		return -1
 	
-	def headerData(self, col, orientation, role):
+	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-			return self._COLS[col]
-		return QAbstractItemModel.headerData(self, col, orientation, role)
+			return self._COLS[section]
+		return QAbstractItemModel.headerData(self, section, orientation, role)
 	
 	def index(self, row, column, parent):
 		return self.createIndex(row, column)
@@ -132,8 +157,6 @@ class MPQArchiveModel(QAbstractItemModel):
 	def setFile(self, file):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = list(file.list())[:50]
-		print dir(self.rows[0])
-		print self.rows[0].compsize, self.rows[0].fileflags, self.rows[0].blockindex, self.rows[0].filetimehi, self.rows[0].hashindex, self.rows[0].locale
 		self.emit(SIGNAL("layoutChanged()"))
 
 
