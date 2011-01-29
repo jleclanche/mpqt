@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
 		def openFile(index):
 			f = self.model.data(index)
 			if isinstance(f, Directory):
-				self.model.setPath(f)
+				self.model.setPath(f.filename)
 			else:
 				print "Opening file %s not implemented" % (f)
 		view.activated.connect(openFile)
@@ -87,21 +87,24 @@ def hsize(i):
 			return x % (i)
 		i /= 1024.0
 
-class Directory(str):
-	"""
-	Emulates a directory within a MPQ
-	MPQs don't have a concept of directories so we create them ourselves.
-	A dir is just a string (the path), we don't need to store anything else
-	so we just subclass str and be done with it.
-	"""
-	pass
-
 def splitpath(path):
 	"Emulate windows splitpath"
 	x = path.split("\\")
 	if len(x) == 1:
 		return "", x[0]
 	return "\\".join(x[:-1]), x[-1]
+
+class Directory(str):
+	"""
+	Emulates a directory within a MPQ
+	MPQs don't have a concept of directories so we create them ourselves.
+	A dir is just a string (the path), but we do need to store the full path.
+	"""
+	def __new__(cls, path):
+		_, name = splitpath(path)
+		instance = str.__new__(cls, name)
+		instance.filename = path
+		return instance
 
 class MPQArchiveBaseModel(object):
 	_COLS = ("Name", "Size")
@@ -123,7 +126,7 @@ class MPQArchiveBaseModel(object):
 						parent, dirname = splitpath(path)
 						if parent not in self.directories:
 							addpath(parent)
-						self.directories[parent].append(Directory(dirname))
+						self.directories[parent].append(Directory(path))
 			
 			addpath(path)
 			self.directories[path].append(f)
