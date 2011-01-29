@@ -25,12 +25,27 @@ class MPQt(QApplication):
 			self.open(name)
 	
 	def open(self, path):
-		self.mpq = MPQ(path)
-		self.mainWindow.model.setFile(self.mpq)
+		self.mainWindow.addTab(MPQ(path))
 		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 	
 	def extract(self, file, target):
 		self.mpq.extract(file, target)
+
+class ListView(QListView):
+	def __init__(self, *args):
+		QListView.__init__(self, *args)
+		self.setFlow(QListView.TopToBottom)
+		self.setLayoutMode(QListView.SinglePass)
+		self.setResizeMode(QListView.Adjust)
+		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		self.setSelectionRectVisible(True)
+		self.setSpacing(1)
+		self.setViewMode(QListView.ListMode)
+		self.setWrapping(True)
+		self.activated.connect(qApp.mainWindow.actionActivateFile)
+		
+		self.setContextMenuPolicy(Qt.CustomContextMenu)
+		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
@@ -39,47 +54,13 @@ class MainWindow(QMainWindow):
 		self.__addMenus()
 		self.__addToolbar()
 		
-		self.model = MPQArchiveListModel()
-		
-		self.view = view = QListView()
-		view.setFlow(QListView.TopToBottom)
-		view.setLayoutMode(QListView.SinglePass)
-		view.setResizeMode(QListView.Adjust)
-		view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-		view.setSelectionRectVisible(True)
-		view.setSpacing(1)
-		view.setViewMode(QListView.ListMode)
-		view.setWrapping(True)
-		
-		def openFile(index):
-			f = self.model.data(index)
-			if isinstance(f, Directory):
-				self.model.setPath(f.filename)
-			else:
-				print "Opening file %s not implemented" % (f.filename)
-		view.activated.connect(openFile)
-		
-		self.contextMenu = QMenu()
-		
-		def createContextMenu(pos):
-			self.contextMenu.clear()
-			indexes = view.selectedIndexes()
-			if not indexes:
-				self.contextMenu.addAction("<No file selected>").setDisabled(True)
-			else:
-				self.contextMenu.addAction("Extract", self.actionExtract, "Ctrl+E")
-				self.contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
-				self.contextMenu.addSeparator()
-				self.contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
-			self.contextMenu.exec_(view.mapToGlobal(pos))
-		
-		view.setContextMenuPolicy(Qt.CustomContextMenu)
-		view.customContextMenuRequested.connect(createContextMenu)
+		self.tabs = []
+		self.tabWidget = QTabWidget()
+		self.tabWidget.setDocumentMode(True)
+		self.tabWidget.setMovable(True)
+		self.setCentralWidget(self.tabWidget)
 		
 		#view = QTreeView()
-		
-		view.setModel(self.model)
-		self.setCentralWidget(view)
 	
 	def __addMenus(self):
 		fileMenu = self.menuBar().addMenu("&File")
@@ -101,11 +82,42 @@ class MainWindow(QMainWindow):
 		fileMask.setPlaceholderText("File mask")
 		toolbar.addWidget(fileMask)
 	
+	def addTab(self, file):
+		view = ListView()
+		model = MPQArchiveListModel()
+		model.setFile(file)
+		view.setModel(model)
+		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
+	
+	def createContextMenu(self, pos):
+		contextMenu = QMenu()
+		indexes = view.selectedIndexes()
+		if not indexes:
+			contextMenu.addAction("<No file selected>").setDisabled(True)
+		else:
+			contextMenu.addAction("Extract", self.actionExtract, "Ctrl+E")
+			contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
+			contextMenu.addSeparator()
+			contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
+		contextMenu.exec_(self.tabWidget.currentWidget().mapToGlobal(pos))
+	
+	def currentModel(self):
+		return self.tabWidget.currentWidget().model()
+	
+	def actionActivateFile(self, index):
+		model = self.currentModel()
+		f = model.data(index)
+		if isinstance(f, Directory):
+			model.setPath(f.filename)
+		else:
+			print "Opening file %s not implemented" % (f.filename)
+	
 	def actionExtract(self):
 		indexes = self.view.selectedIndexes()
+		model = self.currentModel()
 		if indexes:
 			for index in indexes:
-				file = self.model.data(index)
+				file = model.data(index)
 				if isinstance(file, Directory):
 					print "Extracting folders not implemented"
 					return
@@ -154,6 +166,7 @@ class MPQArchiveBaseModel(object):
 		self.rows = []
 	
 	def setFile(self, file):
+		self.file = file
 		self.rows = []
 		self.files = []
 		self.directories = {} # emulate a directory structure
@@ -178,7 +191,7 @@ class MPQArchiveBaseModel(object):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
-		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(qApp.mpq.filename), path.replace("\\", "/")))
+		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(self.file.filename), path.replace("\\", "/")))
 
 
 class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
