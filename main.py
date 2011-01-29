@@ -38,6 +38,13 @@ class MainWindow(QMainWindow):
 		self.model = MPQArchiveListModel()
 		
 		view = QListView()
+		def openFile(index):
+			f = self.model.data(index)
+			if isinstance(f, Directory):
+				self.model.setPath(f)
+			else:
+				print "Opening file %s not implemented" % (f)
+		view.activated.connect(openFile)
 		#view = QTreeView()
 		
 		view.setModel(self.model)
