@@ -130,11 +130,42 @@ def splitpath(path):
 		return "", x[0]
 	return "\\".join(x[:-1]), x[-1]
 
-class MPQArchiveTreeModel(QAbstractItemModel):
+
+class MPQArchiveBaseModel(object):
 	_COLS = ("Name", "Size")
 	
+	def __init__(self):
+		self.rows = []
+	
+	def setFile(self, file):
+		self.rows = []
+		self.files = []
+		self.directories = {} # emulate a directory structure
+		for f in file.list():
+			self.files.append(f)
+			path, _ = splitpath(f.filename) # Emulate unix os.path.split
+			def addpath(path):
+				if path not in self.directories:
+					self.directories[path] = []
+					if path:
+						parent, dirname = splitpath(path)
+						if parent not in self.directories:
+							addpath(parent)
+						self.directories[parent].append(Directory(dirname))
+			
+			addpath(path)
+			self.directories[path].append(f)
+		self.setPath("")
+	
+	def setPath(self, path):
+		self.emit(SIGNAL("layoutAboutToBeChanged()"))
+		self.rows = self.directories[path]
+		self.emit(SIGNAL("layoutChanged()"))
+
+class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
 	def __init__(self, *args):
 		QAbstractItemModel.__init__(self, *args)
+		self.rows = []
 	
 	def columnCount(self, parent):
 		return len(self._COLS)
@@ -167,38 +198,19 @@ class MPQArchiveTreeModel(QAbstractItemModel):
 		return QAbstractItemModel.headerData(self, section, orientation, role)
 	
 	def index(self, row, column, parent):
-		return self.createIndex(row, column)
+		if not self.hasIndex(row, column, parent):
+			return QModelIndex()
+		
+		if not parent.isValid():
+			return self.createIndex(row, column)
+		
+		return QModelIndex()
 	
 	def parent(self, index):
 		return QModelIndex() # crash!
 	
 	def rowCount(self, parent):
 		return len(self.rows)
-	
-	def setFile(self, file):
-		self.rows = []
-		self.files = []
-		self.directories = {} # emulate a directory structure
-		for f in file.list():
-			self.files.append(f)
-			path, _ = splitpath(f.filename) # Emulate unix os.path.split
-			def addpath(path):
-				if path not in self.directories:
-					self.directories[path] = []
-					if path != "\\":
-						parent, dirname = splitpath(path)
-						if parent not in self.directories:
-							addpath(parent)
-						self.directories[parent].append(Directory(dirname))
-			
-			addpath(path)
-			self.directories[path].append(f)
-		self.setPath("")
-	
-	def setPath(self, path):
-		self.emit(SIGNAL("layoutAboutToBeChanged()"))
-		self.rows = self.directories[path]
-		self.emit(SIGNAL("layoutChanged()"))
 
 
 
