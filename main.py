@@ -42,6 +42,8 @@ class MainWindow(QMainWindow):
 		view.setFlow(QListView.TopToBottom)
 		view.setLayoutMode(QListView.SinglePass)
 		view.setResizeMode(QListView.Adjust)
+		view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		view.setSelectionRectVisible(True)
 		view.setSpacing(1)
 		view.setViewMode(QListView.ListMode)
 		view.setWrapping(True)
