@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
 def hsize(i):
 	"Human-readable file size"
-	for x in ("%i", "%3.1f K", "%3.1f M", "%3.1f G", "%3.1f T"):
+	for x in ("%i B", "%3.1f KiB", "%3.1f MiB", "%3.1f GiB", "%3.1f TiB"):
 		if i < 1024.0:
 			return x % (i)
 		i /= 1024.0
