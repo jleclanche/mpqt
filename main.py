@@ -56,6 +56,23 @@ class MainWindow(QMainWindow):
 				print "Opening file %s not implemented" % (f.filename)
 		view.activated.connect(openFile)
 		
+		self.contextMenu = QMenu()
+		
+		def createContextMenu(pos):
+			self.contextMenu.clear()
+			indexes = view.selectedIndexes()
+			if not indexes:
+				self.contextMenu.addAction("<No file selected>").setDisabled(True)
+			else:
+				self.contextMenu.addAction("Extract", lambda: None, "Ctrl+E")
+				self.contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
+				self.contextMenu.addSeparator()
+				self.contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
+			self.contextMenu.exec_(view.mapToGlobal(pos))
+			
+		view.setContextMenuPolicy(Qt.CustomContextMenu)
+		view.customContextMenuRequested.connect(createContextMenu)
+		
 		#view = QTreeView()
 		
 		view.setModel(self.model)
