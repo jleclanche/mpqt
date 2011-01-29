@@ -128,6 +128,7 @@ class MPQArchiveBaseModel(object):
 		for f in file.list():
 			self.files.append(f)
 			path, _ = splitpath(f.filename) # Emulate unix os.path.split
+			path = path.lower()
 			def addpath(path):
 				if path not in self.directories:
 					self.directories[path] = []
