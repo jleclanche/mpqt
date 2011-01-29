@@ -170,11 +170,17 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 			if isinstance(file, Directory):
 				return QIcon.fromTheme("folder")
 			
+			if ext.endswith(".blp"):
+				return QIcon.fromTheme("image-x-generic")
+			
 			if ext.endswith(".exe"):
 				return QIcon.fromTheme("application-x-executable")
 			
-			if ext.endswith(".blp"):
-				return QIcon.fromTheme("image-x-generic")
+			if ext.endswith(".mp3") or ext.endswith(".ogg") or ext.endswith(".wav"):
+				return QIcon.fromTheme("audio-x-generic")
+			
+			if ext.endswith(".ttf"):
+				return QIcon.fromTheme("font-x-generic")
 			
 			return QIcon.fromTheme("text-x-generic")
 	
