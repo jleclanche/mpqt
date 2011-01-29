@@ -21,8 +21,6 @@ class MPQt(QApplication):
 		
 		for name in files:
 			self.open(name)
-		
-		self.open("/home/adys/wow/Data/art.MPQ")
 	
 	def open(self, name):
 		mpq = MPQ(name)
@@ -114,6 +112,22 @@ class MPQArchiveListModel(QAbstractListModel):
 COLUMN_NAME = 0
 COLUMN_SIZE = 1
 
+class Directory(str):
+	"""
+	Emulates a directory within a MPQ
+	MPQs don't have a concept of directories so we create them ourselves.
+	A dir is just a string (the path), we don't need to store anything else
+	so we just subclass str and be done with it.
+	"""
+	pass
+
+def splitpath(path):
+	"Emulate windows splitpath"
+	x = path.split("\\")
+	if len(x) == 1:
+		return "", x[0]
+	return "\\".join(x[:-1]), x[-1]
+
 class MPQArchiveTreeModel(QAbstractItemModel):
 	_COLS = ("Name", "Size")
 	
@@ -132,10 +146,16 @@ class MPQArchiveTreeModel(QAbstractItemModel):
 		
 		column = index.column()
 		if column == COLUMN_NAME:
-			#return file.filename
+			if isinstance(file, Directory):
+				return file
 			return file.plainpath
 		
 		if column == COLUMN_SIZE:
+			if isinstance(file, Directory):
+				items = len(self.directories[file])
+				if items == 1:
+					return "1 item"
+				return "%i items" % (items)
 			return hsize(file.filesize)
 		
 		return -1
@@ -155,8 +175,27 @@ class MPQArchiveTreeModel(QAbstractItemModel):
 		return len(self.rows)
 	
 	def setFile(self, file):
+		self.files = []
+		self.directories = {} # emulate a directory structure
+		for f in file.list():
+			self.files.append(f)
+			path, _ = splitpath(f.filename) # Emulate unix os.path.split
+			def addpath(path):
+				if path not in self.directories:
+					self.directories[path] = []
+					if path != "\\":
+						parent, dirname = splitpath(path)
+						if parent not in self.directories:
+							addpath(parent)
+						self.directories[parent].append(Directory(dirname))
+			
+			addpath(path)
+			self.directories[path].append(f)
+		self.setPath("")
+	
+	def setPath(self, path):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
-		self.rows = list(file.list())[:50]
+		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
 
 
