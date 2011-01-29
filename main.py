@@ -140,7 +140,7 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 		QAbstractListModel.__init__(self, *args)
 		self.rows = []
 	
-	def data(self, index, role):
+	def data(self, index, role=Qt.DisplayRole):
 		if role == Qt.DisplayRole:
 			file = self.rows[index.row()]
 			if isinstance(file, Directory):
