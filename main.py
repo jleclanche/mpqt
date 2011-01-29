@@ -35,13 +35,12 @@ class MainWindow(QMainWindow):
 		
 		self.__addToolbar()
 		
-		self.model = MPQArchiveTreeModel()
+		self.model = MPQArchiveListModel()
 		
-		#view = QListView()
-		view = QTreeView()
+		view = QListView()
+		#view = QTreeView()
 		
 		view.setModel(self.model)
-		view.setSortingEnabled(True)
 		self.setCentralWidget(view)
 		
 		#self.statusBar().showMessage("Ready") # perf leak!
@@ -81,39 +80,6 @@ def hsize(i):
 			return x % (i)
 		i /= 1024.0
 
-
-class MPQArchiveListModel(QAbstractListModel):
-	def __init__(self, *args):
-		QAbstractListModel.__init__(self, *args)
-		self.rows = []
-	
-	def data(self, index, role):
-		return "test"
-		print index.row()
-		file = self.rows[index.row()]
-		return file.plainpath
-	
-	def headerData(self, section, orientation, role):
-		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-			return "Name"
-		
-		return QAbstractItemModel.headerData(self, section, orientation, role)
-	
-	def rowCount(self, parent):
-		if parent.isValid():
-			return 0
-	
-	def setFile(self, file):
-		self.emit(SIGNAL("layoutAboutToBeChanged()"))
-		lf = file.list()
-		for i in range(10):
-			self.rows.append(lf.next())
-		self.emit(SIGNAL("layoutChanged()"))
-
-
-COLUMN_NAME = 0
-COLUMN_SIZE = 1
-
 class Directory(str):
 	"""
 	Emulates a directory within a MPQ
@@ -129,7 +95,6 @@ def splitpath(path):
 	if len(x) == 1:
 		return "", x[0]
 	return "\\".join(x[:-1]), x[-1]
-
 
 class MPQArchiveBaseModel(object):
 	_COLS = ("Name", "Size")
@@ -161,6 +126,33 @@ class MPQArchiveBaseModel(object):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
+
+
+class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
+	def __init__(self, *args):
+		QAbstractListModel.__init__(self, *args)
+		self.rows = []
+	
+	def data(self, index, role):
+		if role == Qt.DisplayRole:
+			file = self.rows[index.row()]
+			if isinstance(file, Directory):
+				return file
+			return file.plainpath
+		return None
+	
+	def headerData(self, section, orientation, role):
+		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+			return "Name"
+		
+		return QAbstractItemModel.headerData(self, section, orientation, role)
+	
+	def rowCount(self, parent):
+		return len(self.rows)
+
+
+COLUMN_NAME = 0
+COLUMN_SIZE = 1
 
 class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
 	def __init__(self, *args):
@@ -207,7 +199,10 @@ class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
 		return QModelIndex()
 	
 	def parent(self, index):
-		return QModelIndex() # crash!
+		if not index.isValid():
+			return QModelIndex()
+		
+		return QModelIndex()
 	
 	def rowCount(self, parent):
 		return len(self.rows)
