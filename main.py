@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
 			if isinstance(f, Directory):
 				self.model.setPath(f.filename)
 			else:
-				print "Opening file %s not implemented" % (f)
+				print "Opening file %s not implemented" % (f.filename)
 		view.activated.connect(openFile)
 		#view = QTreeView()
 		
@@ -104,6 +104,7 @@ class Directory(str):
 		_, name = splitpath(path)
 		instance = str.__new__(cls, name)
 		instance.filename = path
+		instance.plainpath = name
 		return instance
 
 class MPQArchiveBaseModel(object):
@@ -143,12 +144,11 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 		QAbstractListModel.__init__(self, *args)
 		self.rows = []
 	
-	def data(self, index, role=Qt.DisplayRole):
+	def data(self, index, role=-1):
+		if role == -1:
+			return self.rows[index.row()]
 		if role == Qt.DisplayRole:
-			file = self.rows[index.row()]
-			if isinstance(file, Directory):
-				return file
-			return file.plainpath
+			return self.rows[index.row()].plainpath
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
