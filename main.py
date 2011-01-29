@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os.path
 from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
-
 from storm import MPQ
 
 
@@ -19,14 +19,14 @@ class MPQt(QApplication):
 		
 		_, files = arguments.parse_args(argv[1:])
 		
+		self.mainWindow.statusBar().showMessage("Ready")
+		
 		for name in files:
 			self.open(name)
-		
-		self.mainWindow.statusBar().showMessage("Ready")
 	
 	def open(self, name):
-		mpq = MPQ(name)
-		self.mainWindow.model.setFile(mpq)
+		self.mpq = MPQ(name)
+		self.mainWindow.model.setFile(self.mpq)
 		self.mainWindow.setWindowTitle("%s - MPQt" % (name))
 
 class MainWindow(QMainWindow):
@@ -58,8 +58,6 @@ class MainWindow(QMainWindow):
 		
 		view.setModel(self.model)
 		self.setCentralWidget(view)
-		
-		#self.statusBar().showMessage("Ready") # perf leak!
 	
 	def __addMenus(self):
 		fileMenu = self.menuBar().addMenu("&File")
@@ -147,6 +145,8 @@ class MPQArchiveBaseModel(object):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
+		_, mpq = os.path.split(qApp.mpq.filename)
+		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (mpq, path.replace("\\", "/")))
 
 
 class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
