@@ -139,11 +139,10 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 			if isinstance(file, Directory):
 				return file
 			return file.plainpath
-		return None
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-			return "Name"
+			return self._COLS[0]
 		
 		return QAbstractItemModel.headerData(self, section, orientation, role)
 	
