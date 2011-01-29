@@ -5,7 +5,7 @@ import os.path
 from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
-from storm import MPQ
+from storm import MPQ, MPQFileData
 
 
 class MPQt(QApplication):
@@ -28,6 +28,9 @@ class MPQt(QApplication):
 		self.mpq = MPQ(name)
 		self.mainWindow.model.setFile(self.mpq)
 		self.mainWindow.setWindowTitle("%s - MPQt" % (name))
+	
+	def extract(self, file, target):
+		self.mpq.extract(file, target)
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
@@ -38,7 +41,7 @@ class MainWindow(QMainWindow):
 		
 		self.model = MPQArchiveListModel()
 		
-		view = QListView()
+		self.view = view = QListView()
 		view.setFlow(QListView.TopToBottom)
 		view.setLayoutMode(QListView.SinglePass)
 		view.setResizeMode(QListView.Adjust)
@@ -64,12 +67,12 @@ class MainWindow(QMainWindow):
 			if not indexes:
 				self.contextMenu.addAction("<No file selected>").setDisabled(True)
 			else:
-				self.contextMenu.addAction("Extract", lambda: None, "Ctrl+E")
+				self.contextMenu.addAction("Extract", self.actionExtract, "Ctrl+E")
 				self.contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
 				self.contextMenu.addSeparator()
 				self.contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
 			self.contextMenu.exec_(view.mapToGlobal(pos))
-			
+		
 		view.setContextMenuPolicy(Qt.CustomContextMenu)
 		view.customContextMenuRequested.connect(createContextMenu)
 		
@@ -97,6 +100,16 @@ class MainWindow(QMainWindow):
 		fileMask = QLineEdit()
 		fileMask.setPlaceholderText("File mask")
 		toolbar.addWidget(fileMask)
+	
+	def actionExtract(self):
+		indexes = self.view.selectedIndexes()
+		if indexes:
+			for index in indexes:
+				file = self.model.data(index)
+				if isinstance(file, Directory):
+					print "Extracting folders not implemented"
+					return
+				qApp.extract(file, "extractedFiles")
 	
 	def actionNew(self):
 		print "actionNew()"
@@ -165,8 +178,7 @@ class MPQArchiveBaseModel(object):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
-		_, mpq = os.path.split(qApp.mpq.filename)
-		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (mpq, path.replace("\\", "/")))
+		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(qApp.mpq.filename), path.replace("\\", "/")))
 
 
 class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
