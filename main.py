@@ -69,7 +69,9 @@ class MainWindow(QMainWindow):
 		print "actionNew()"
 	
 	def actionOpen(self):
-		print "actionOpen()"
+		filename, filters = QFileDialog.getOpenFileName(self, "Open file", "", "Blizzard MPQ archives (*.mpq);;All files (*.*)")
+		if filename:
+			qApp.open(filename)
 
 
 def hsize(i):
@@ -133,7 +135,6 @@ class MPQArchiveTreeModel(QAbstractItemModel):
 	
 	def __init__(self, *args):
 		QAbstractItemModel.__init__(self, *args)
-		self.rows = []
 	
 	def columnCount(self, parent):
 		return len(self._COLS)
@@ -175,6 +176,7 @@ class MPQArchiveTreeModel(QAbstractItemModel):
 		return len(self.rows)
 	
 	def setFile(self, file):
+		self.rows = []
 		self.files = []
 		self.directories = {} # emulate a directory structure
 		for f in file.list():
