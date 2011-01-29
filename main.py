@@ -5,7 +5,7 @@ import os.path
 from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
-from storm import MPQ, MPQFileData
+from storm import MPQ
 
 
 class MPQt(QApplication):
@@ -24,10 +24,10 @@ class MPQt(QApplication):
 		for name in files:
 			self.open(name)
 	
-	def open(self, name):
-		self.mpq = MPQ(name)
+	def open(self, path):
+		self.mpq = MPQ(path)
 		self.mainWindow.model.setFile(self.mpq)
-		self.mainWindow.setWindowTitle("%s - MPQt" % (name))
+		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 	
 	def extract(self, file, target):
 		self.mpq.extract(file, target)
@@ -85,16 +85,16 @@ class MainWindow(QMainWindow):
 		fileMenu = self.menuBar().addMenu("&File")
 		fileMenu.addAction(QIcon.fromTheme("document-new"), "&New", self.actionNew, "Ctrl+N")
 		fileMenu.addAction(QIcon.fromTheme("document-open"), "&Open...", self.actionOpen, "Ctrl+O")
-		recentMenuItem = fileMenu.addAction(QIcon.fromTheme("document-open-recent"), "Open &Recent")
-		recentMenuItem.setDisabled(True)
+		fileMenu.addAction(QIcon.fromTheme("document-open-recent"), "Open &Recent").setDisabled(True)
 		fileMenu.addSeparator()
-		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self, SLOT("close()"), "Ctrl+Q")
+		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self.close, "Ctrl+Q")
 		
-		fileMenu = self.menuBar().addMenu("&Help")
-		fileMenu.addAction(QIcon.fromTheme("help-about"), "About", lambda: None)
+		helpMenu = self.menuBar().addMenu("&Help")
+		helpMenu.addAction(QIcon.fromTheme("help-about"), "About")
 	
 	def __addToolbar(self):
 		toolbar = self.addToolBar("Toolbar")
+		toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 		toolbar.addAction(QIcon.fromTheme("document-new"), "New").triggered.connect(self.actionNew)
 		toolbar.addAction(QIcon.fromTheme("document-open"), "Open").triggered.connect(self.actionOpen)
 		fileMask = QLineEdit()
@@ -262,6 +262,7 @@ class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
 			return self._COLS[section]
+		
 		return QAbstractItemModel.headerData(self, section, orientation, role)
 	
 	def index(self, row, column, parent):
