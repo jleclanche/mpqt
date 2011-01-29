@@ -13,7 +13,7 @@ class MPQt(QApplication):
 		QApplication.__init__(self, argv)
 		self.mainWindow = MainWindow()
 		self.mainWindow.setWindowTitle("MPQt")
-		self.mainWindow.statusBar().showMessage("Ready")
+		self.mainWindow.resize(1024, 768)
 		
 		arguments = OptionParser()
 		
@@ -21,6 +21,8 @@ class MPQt(QApplication):
 		
 		for name in files:
 			self.open(name)
+		
+		self.mainWindow.statusBar().showMessage("Ready")
 	
 	def open(self, name):
 		mpq = MPQ(name)
@@ -32,12 +34,18 @@ class MainWindow(QMainWindow):
 		QMainWindow.__init__(self, *args)
 		
 		self.__addMenus()
-		
 		self.__addToolbar()
 		
 		self.model = MPQArchiveListModel()
 		
 		view = QListView()
+		view.setFlow(QListView.TopToBottom)
+		view.setLayoutMode(QListView.SinglePass)
+		view.setResizeMode(QListView.Adjust)
+		view.setSpacing(1)
+		view.setViewMode(QListView.ListMode)
+		view.setWrapping(True)
+		
 		def openFile(index):
 			f = self.model.data(index)
 			if isinstance(f, Directory):
@@ -45,6 +53,7 @@ class MainWindow(QMainWindow):
 			else:
 				print "Opening file %s not implemented" % (f.filename)
 		view.activated.connect(openFile)
+		
 		#view = QTreeView()
 		
 		view.setModel(self.model)
@@ -54,19 +63,20 @@ class MainWindow(QMainWindow):
 	
 	def __addMenus(self):
 		fileMenu = self.menuBar().addMenu("&File")
-		fileMenu.addAction("&New", self.actionNew, "Ctrl+N")
-		fileMenu.addAction("&Open...", self.actionOpen, "Ctrl+O")
-		fileMenu.addAction("Open &Recent")
+		fileMenu.addAction(QIcon.fromTheme("document-new"), "&New", self.actionNew, "Ctrl+N")
+		fileMenu.addAction(QIcon.fromTheme("document-open"), "&Open...", self.actionOpen, "Ctrl+O")
+		recentMenuItem = fileMenu.addAction(QIcon.fromTheme("document-open-recent"), "Open &Recent")
+		recentMenuItem.setDisabled(True)
 		fileMenu.addSeparator()
-		fileMenu.addAction("&Quit", self, SLOT("close()"), "Ctrl+Q")
+		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self, SLOT("close()"), "Ctrl+Q")
 		
 		fileMenu = self.menuBar().addMenu("&Help")
-		fileMenu.addAction("About", lambda: None)
+		fileMenu.addAction(QIcon.fromTheme("help-about"), "About", lambda: None)
 	
 	def __addToolbar(self):
 		toolbar = self.addToolBar("Toolbar")
-		toolbar.addAction("New")
-		toolbar.addAction("Open")
+		toolbar.addAction(QIcon.fromTheme("document-new"), "New").triggered.connect(self.actionNew)
+		toolbar.addAction(QIcon.fromTheme("document-open"), "Open").triggered.connect(self.actionOpen)
 		fileMask = QLineEdit()
 		fileMask.setPlaceholderText("File mask")
 		toolbar.addWidget(fileMask)
@@ -145,10 +155,28 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 		self.rows = []
 	
 	def data(self, index, role=-1):
+		if index.row() >= len(self.rows):
+			return
+		file = self.rows[index.row()]
+		
 		if role == -1:
 			return self.rows[index.row()]
+		
 		if role == Qt.DisplayRole:
 			return self.rows[index.row()].plainpath
+		
+		if role == Qt.DecorationRole:
+			ext = file.filename.lower()
+			if isinstance(file, Directory):
+				return QIcon.fromTheme("folder")
+			
+			if ext.endswith(".exe"):
+				return QIcon.fromTheme("application-x-executable")
+			
+			if ext.endswith(".blp"):
+				return QIcon.fromTheme("image-x-generic")
+			
+			return QIcon.fromTheme("text-x-generic")
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
