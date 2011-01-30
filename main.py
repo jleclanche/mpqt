@@ -6,6 +6,7 @@ from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
 from storm import MPQ
+from time import sleep
 
 
 class MPQt(QApplication):
@@ -29,7 +30,8 @@ class MPQt(QApplication):
 		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 	
 	def extract(self, file, target):
-		self.mpq.extract(file, target)
+		print "extracting %r -> %r" % (file, target)
+		self.mainWindow.currentModel().file.extract(file, target)
 
 class ListView(QListView):
 	def __init__(self, *args):
@@ -59,8 +61,6 @@ class MainWindow(QMainWindow):
 		self.tabWidget.setDocumentMode(True)
 		self.tabWidget.setMovable(True)
 		self.setCentralWidget(self.tabWidget)
-		
-		#view = QTreeView()
 	
 	def __addMenus(self):
 		fileMenu = self.menuBar().addMenu("&File")
@@ -80,18 +80,20 @@ class MainWindow(QMainWindow):
 		toolbar.addAction(QIcon.fromTheme("document-open"), "Open").triggered.connect(self.actionOpen)
 		fileMask = QLineEdit()
 		fileMask.setPlaceholderText("File mask")
+		fileMask.returnPressed.connect(lambda: self.currentModel().setPath(""))
 		toolbar.addWidget(fileMask)
 	
 	def addTab(self, file):
 		view = ListView()
-		model = MPQArchiveListModel()
+		model = ListModel()
 		model.setFile(file)
 		view.setModel(model)
+		view._m_model = model # BUG
 		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
 	
 	def createContextMenu(self, pos):
 		contextMenu = QMenu()
-		indexes = view.selectedIndexes()
+		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		if not indexes:
 			contextMenu.addAction("<No file selected>").setDisabled(True)
 		else:
@@ -102,7 +104,8 @@ class MainWindow(QMainWindow):
 		contextMenu.exec_(self.tabWidget.currentWidget().mapToGlobal(pos))
 	
 	def currentModel(self):
-		return self.tabWidget.currentWidget().model()
+		treeview = self.tabWidget.currentWidget()
+		return treeview._m_model # BUG
 	
 	def actionActivateFile(self, index):
 		model = self.currentModel()
@@ -113,7 +116,7 @@ class MainWindow(QMainWindow):
 			print "Opening file %s not implemented" % (f.filename)
 	
 	def actionExtract(self):
-		indexes = self.view.selectedIndexes()
+		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		model = self.currentModel()
 		if indexes:
 			for index in indexes:
@@ -159,11 +162,8 @@ class Directory(str):
 		instance.plainpath = name
 		return instance
 
-class MPQArchiveBaseModel(object):
+class BaseModel(object):
 	_COLS = ("Name", "Size")
-	
-	def __init__(self):
-		self.rows = []
 	
 	def setFile(self, file):
 		self.file = file
@@ -194,13 +194,13 @@ class MPQArchiveBaseModel(object):
 		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(self.file.filename), path.replace("\\", "/")))
 
 
-class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
+class ListModel(QAbstractListModel, BaseModel):
 	def __init__(self, *args):
-		QAbstractListModel.__init__(self, *args)
+		super(ListModel, self).__init__(*args)
 		self.rows = []
 	
 	def data(self, index, role=-1):
-		if index.row() >= len(self.rows):
+		if index.row() >= self.rowCount():
 			return
 		file = self.rows[index.row()]
 		
@@ -235,14 +235,14 @@ class MPQArchiveListModel(QAbstractListModel, MPQArchiveBaseModel):
 		
 		return QAbstractItemModel.headerData(self, section, orientation, role)
 	
-	def rowCount(self, parent):
+	def rowCount(self, parent=QModelIndex()):
 		return len(self.rows)
 
 
 COLUMN_NAME = 0
 COLUMN_SIZE = 1
 
-class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
+class TreeModel(QAbstractItemModel, BaseModel):
 	def __init__(self, *args):
 		QAbstractItemModel.__init__(self, *args)
 		self.rows = []
@@ -293,7 +293,7 @@ class MPQArchiveTreeModel(QAbstractItemModel, MPQArchiveBaseModel):
 		
 		return QModelIndex()
 	
-	def rowCount(self, parent):
+	def rowCount(self, parent=QModelIndex()):
 		return len(self.rows)
 
 
