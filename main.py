@@ -9,6 +9,36 @@ from storm import MPQ
 from time import sleep
 
 
+# Helpers
+def hsize(i):
+	"Human-readable file size"
+	for x in ("%i B", "%3.1f KiB", "%3.1f MiB", "%3.1f GiB", "%3.1f TiB"):
+		if i < 1024.0:
+			return x % (i)
+		i /= 1024.0
+
+def splitpath(path):
+	"Emulate windows splitpath"
+	x = path.split("\\")
+	if len(x) == 1:
+		return "", x[0]
+	return "\\".join(x[:-1]), x[-1]
+
+
+class Directory(str):
+	"""
+	Emulates a directory within a MPQ
+	MPQs don't have a concept of directories so we create them ourselves.
+	A dir is just a string (the path), but we do need to store the full path.
+	"""
+	def __new__(cls, path):
+		_, name = splitpath(path)
+		instance = str.__new__(cls, name)
+		instance.filename = path
+		instance.plainpath = name
+		return instance
+
+
 class MPQt(QApplication):
 	def __init__(self, argv):
 		QApplication.__init__(self, argv)
@@ -17,7 +47,6 @@ class MPQt(QApplication):
 		self.mainWindow.resize(1024, 768)
 		
 		arguments = OptionParser()
-		
 		_, files = arguments.parse_args(argv[1:])
 		
 		self.mainWindow.statusBar().showMessage("Ready")
@@ -33,21 +62,6 @@ class MPQt(QApplication):
 		print "extracting %r -> %r" % (file, target)
 		self.mainWindow.currentModel().file.extract(file, target)
 
-class ListView(QListView):
-	def __init__(self, *args):
-		QListView.__init__(self, *args)
-		self.setFlow(QListView.TopToBottom)
-		self.setLayoutMode(QListView.SinglePass)
-		self.setResizeMode(QListView.Adjust)
-		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-		self.setSelectionRectVisible(True)
-		self.setSpacing(1)
-		self.setViewMode(QListView.ListMode)
-		self.setWrapping(True)
-		self.activated.connect(qApp.mainWindow.actionActivateFile)
-		
-		self.setContextMenuPolicy(Qt.CustomContextMenu)
-		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
@@ -56,7 +70,6 @@ class MainWindow(QMainWindow):
 		self.__addMenus()
 		self.__addToolbar()
 		
-		self.tabs = []
 		self.tabWidget = QTabWidget()
 		self.tabWidget.setDocumentMode(True)
 		self.tabWidget.setMovable(True)
@@ -82,30 +95,6 @@ class MainWindow(QMainWindow):
 		fileMask.setPlaceholderText("File mask")
 		fileMask.returnPressed.connect(lambda: self.currentModel().setPath(""))
 		toolbar.addWidget(fileMask)
-	
-	def addTab(self, file):
-		view = ListView()
-		model = ListModel()
-		model.setFile(file)
-		view.setModel(model)
-		view._m_model = model # BUG
-		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
-	
-	def createContextMenu(self, pos):
-		contextMenu = QMenu()
-		indexes = self.tabWidget.currentWidget().selectedIndexes()
-		if not indexes:
-			contextMenu.addAction("<No file selected>").setDisabled(True)
-		else:
-			contextMenu.addAction("Extract", self.actionExtract, "Ctrl+E")
-			contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
-			contextMenu.addSeparator()
-			contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
-		contextMenu.exec_(self.tabWidget.currentWidget().mapToGlobal(pos))
-	
-	def currentModel(self):
-		treeview = self.tabWidget.currentWidget()
-		return treeview._m_model # BUG
 	
 	def actionActivateFile(self, index):
 		model = self.currentModel()
@@ -133,34 +122,48 @@ class MainWindow(QMainWindow):
 		filename, filters = QFileDialog.getOpenFileName(self, "Open file", "", "Blizzard MPQ archives (*.mpq);;All files (*.*)")
 		if filename:
 			qApp.open(str(filename))
+	
+	def addTab(self, file):
+		view = ListView()
+		model = ListModel()
+		model.setFile(file)
+		view.setModel(model)
+		view._m_model = model # BUG
+		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
+	
+	def createContextMenu(self, pos):
+		contextMenu = QMenu()
+		indexes = self.tabWidget.currentWidget().selectedIndexes()
+		if not indexes:
+			contextMenu.addAction("<No file selected>").setDisabled(True)
+		else:
+			contextMenu.addAction("Extract", self.actionExtract, "Ctrl+E")
+			contextMenu.addAction(QIcon.fromTheme("edit-delete"), "Delete", lambda: None, "Del").setDisabled(True)
+			contextMenu.addSeparator()
+			contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
+		contextMenu.exec_(self.tabWidget.currentWidget().mapToGlobal(pos))
+	
+	def currentModel(self):
+		view = self.tabWidget.currentWidget()
+		return view._m_model # BUG
 
 
-def hsize(i):
-	"Human-readable file size"
-	for x in ("%i B", "%3.1f KiB", "%3.1f MiB", "%3.1f GiB", "%3.1f TiB"):
-		if i < 1024.0:
-			return x % (i)
-		i /= 1024.0
+class ListView(QListView):
+	def __init__(self, *args):
+		QListView.__init__(self, *args)
+		self.setFlow(QListView.TopToBottom)
+		self.setLayoutMode(QListView.SinglePass)
+		self.setResizeMode(QListView.Adjust)
+		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		self.setSelectionRectVisible(True)
+		self.setSpacing(1)
+		self.setViewMode(QListView.ListMode)
+		self.setWrapping(True)
+		self.activated.connect(qApp.mainWindow.actionActivateFile)
+		
+		self.setContextMenuPolicy(Qt.CustomContextMenu)
+		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
 
-def splitpath(path):
-	"Emulate windows splitpath"
-	x = path.split("\\")
-	if len(x) == 1:
-		return "", x[0]
-	return "\\".join(x[:-1]), x[-1]
-
-class Directory(str):
-	"""
-	Emulates a directory within a MPQ
-	MPQs don't have a concept of directories so we create them ourselves.
-	A dir is just a string (the path), but we do need to store the full path.
-	"""
-	def __new__(cls, path):
-		_, name = splitpath(path)
-		instance = str.__new__(cls, name)
-		instance.filename = path
-		instance.plainpath = name
-		return instance
 
 class BaseModel(object):
 	_COLS = ("Name", "Size")
@@ -295,7 +298,6 @@ class TreeModel(QAbstractItemModel, BaseModel):
 	
 	def rowCount(self, parent=QModelIndex()):
 		return len(self.rows)
-
 
 
 def main():
