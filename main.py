@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+import sys
 from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -59,7 +60,6 @@ class MPQt(QApplication):
 		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 	
 	def extract(self, file, target):
-		print "extracting %r -> %r" % (file, target)
 		self.mainWindow.currentModel().file.extract(file, target)
 
 
@@ -126,13 +126,29 @@ class MainWindow(QMainWindow):
 	def actionExtract(self):
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		model = self.currentModel()
-		if indexes:
-			for index in indexes:
-				file = model.data(index)
-				if isinstance(file, Directory):
-					print "Extracting folders not implemented"
-					return
-				qApp.extract(file, "extractedFiles")
+		extractList = []
+		for index in indexes:
+			file = model.data(index)
+			if isinstance(file, Directory):
+				for subfile in self.currentModel().file.list("%s\\*" % (file)):
+					# Recursively extract files within a directory
+					extractList.append(subfile)
+			else:
+				extractList.append(file)
+		
+		total = len(extractList)
+		i = 0
+		lenOut = 0
+		for file in extractList:
+			i += 1
+			pc = (i / total) * 100
+			print "\r" + " " * lenOut,
+			out = "Extracting %i/%i (%i%%)... %s" % (i, total, pc, file)
+			lenOut = len(out)
+			print "\r" + out,
+			self.statusBar().showMessage(out)
+			sys.stdout.flush()
+			qApp.extract(file, os.path.basename(model.file.filename))
 	
 	def actionNew(self):
 		print "actionNew()"
@@ -321,7 +337,6 @@ class TreeModel(QAbstractItemModel, BaseModel):
 
 def main():
 	import signal
-	import sys
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 	app = MPQt(sys.argv)
 	
