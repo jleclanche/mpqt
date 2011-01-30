@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
 	def actionOpen(self):
 		filename, filters = QFileDialog.getOpenFileName(self, "Open file", "", "Blizzard MPQ archives (*.mpq);;All files (*.*)")
 		if filename:
-			qApp.open(filename)
+			qApp.open(str(filename))
 
 
 def hsize(i):
