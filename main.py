@@ -73,13 +73,24 @@ class MainWindow(QMainWindow):
 		self.tabWidget = QTabWidget()
 		self.tabWidget.setDocumentMode(True)
 		self.tabWidget.setMovable(True)
+		self.tabWidget.setTabsClosable(True)
+		self.tabWidget.tabCloseRequested.connect(self.actionCloseTab)
 		self.setCentralWidget(self.tabWidget)
 	
 	def __addMenus(self):
+		def closeOrExit():
+			index = self.tabWidget.currentIndex()
+			if index == -1:
+				self.close()
+			else:
+				self.actionCloseTab(index)
+		
 		fileMenu = self.menuBar().addMenu("&File")
 		fileMenu.addAction(QIcon.fromTheme("document-new"), "&New", self.actionNew, "Ctrl+N")
 		fileMenu.addAction(QIcon.fromTheme("document-open"), "&Open...", self.actionOpen, "Ctrl+O")
 		fileMenu.addAction(QIcon.fromTheme("document-open-recent"), "Open &Recent").setDisabled(True)
+		fileMenu.addSeparator()
+		fileMenu.addAction(QIcon.fromTheme("window-close"), "&Close", closeOrExit, "Ctrl+W")
 		fileMenu.addSeparator()
 		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self.close, "Ctrl+Q")
 		
@@ -103,6 +114,14 @@ class MainWindow(QMainWindow):
 			model.setPath(f.filename)
 		else:
 			print "Opening file %s not implemented" % (f.filename)
+	
+	def actionCloseTab(self, index):
+		widget = self.tabWidget.widget(index)
+		# BUG crashes in FreeMPQArchive()
+		#widget.model().file.close()
+		#del widget.model().file
+		del widget
+		self.tabWidget.removeTab(index)
 	
 	def actionExtract(self):
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
