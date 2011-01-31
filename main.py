@@ -126,15 +126,15 @@ class MainWindow(QMainWindow):
 	def actionExtract(self):
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		model = self.currentModel()
-		extractList = []
+		extractList = set()
 		for index in indexes:
 			file = model.data(index)
 			if isinstance(file, Directory):
 				for subfile in self.currentModel().file.list("%s\\*" % (file)):
 					# Recursively extract files within a directory
-					extractList.append(subfile)
+					extractList.add(subfile)
 			else:
-				extractList.append(file)
+				extractList.add(file)
 		
 		total = len(extractList)
 		i = 0
@@ -149,6 +149,11 @@ class MainWindow(QMainWindow):
 			self.statusBar().showMessage(out)
 			sys.stdout.flush()
 			qApp.extract(file, os.path.basename(model.file.filename))
+		
+		if total:
+			out = "Extracted %i files" % (total)
+			print "\n" + out
+			self.statusBar().showMessage(out)
 	
 	def actionNew(self):
 		print "actionNew()"
@@ -159,8 +164,8 @@ class MainWindow(QMainWindow):
 			qApp.open(str(filename))
 	
 	def addTab(self, file):
-		view = ListView()
-		model = ListModel()
+		view = TreeView()
+		model = TreeModel()
 		model.setFile(file)
 		view.setModel(model)
 		view._m_model = model # BUG
@@ -200,8 +205,40 @@ class ListView(QListView):
 		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
 
 
+class TreeView(QTreeView):
+	def __init__(self, *args):
+		QTreeView.__init__(self, *args)
+		self.setRootIsDecorated(False)
+		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		#self.setSelectionRectVisible(True)
+		self.setSortingEnabled(True)
+		self.activated.connect(qApp.mainWindow.actionActivateFile)
+		self.header().setResizeMode(QHeaderView.Stretch)
+		
+		self.setContextMenuPolicy(Qt.CustomContextMenu)
+		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
+
+
 class BaseModel(object):
 	_COLS = ("Name", "Size")
+	
+	def iconForExtension(self, ext):
+		if ext.endswith(".blp"):
+			return QIcon.fromTheme("image-x-generic")
+		
+		if ext.endswith(".dbc") or ext.endswith(".db2"):
+			return QIcon.fromTheme("x-office-spreadsheet")
+		
+		if ext.endswith(".exe"):
+			return QIcon.fromTheme("application-x-executable")
+		
+		if ext.endswith(".mp3") or ext.endswith(".ogg") or ext.endswith(".wav"):
+			return QIcon.fromTheme("audio-x-generic")
+		
+		if ext.endswith(".ttf"):
+			return QIcon.fromTheme("font-x-generic")
+		
+		return QIcon.fromTheme("text-x-generic")
 	
 	def setFile(self, file):
 		self.file = file
@@ -238,34 +275,23 @@ class ListModel(QAbstractListModel, BaseModel):
 		self.rows = []
 	
 	def data(self, index, role=-1):
-		if index.row() >= self.rowCount():
+		if not index.isValid():
 			return
+		
 		file = self.rows[index.row()]
 		
 		if role == -1:
-			return self.rows[index.row()]
+			return file
 		
 		if role == Qt.DisplayRole:
-			return self.rows[index.row()].plainpath
+			return file.plainpath
 		
 		if role == Qt.DecorationRole:
 			ext = file.filename.lower()
 			if isinstance(file, Directory):
 				return QIcon.fromTheme("folder")
 			
-			if ext.endswith(".blp"):
-				return QIcon.fromTheme("image-x-generic")
-			
-			if ext.endswith(".exe"):
-				return QIcon.fromTheme("application-x-executable")
-			
-			if ext.endswith(".mp3") or ext.endswith(".ogg") or ext.endswith(".wav"):
-				return QIcon.fromTheme("audio-x-generic")
-			
-			if ext.endswith(".ttf"):
-				return QIcon.fromTheme("font-x-generic")
-			
-			return QIcon.fromTheme("text-x-generic")
+			return self.iconForExtension(ext)
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -288,27 +314,37 @@ class TreeModel(QAbstractItemModel, BaseModel):
 	def columnCount(self, parent):
 		return len(self._COLS)
 	
-	def data(self, index, role):
-		if not index.isValid() or role != Qt.DisplayRole:
+	def data(self, index, role=-1):
+		if not index.isValid():
 			return
 		
 		file = self.rows[index.row()]
-		
 		column = index.column()
-		if column == COLUMN_NAME:
-			if isinstance(file, Directory):
-				return file
-			return file.plainpath
 		
-		if column == COLUMN_SIZE:
-			if isinstance(file, Directory):
-				items = len(self.directories[file])
-				if items == 1:
-					return "1 item"
-				return "%i items" % (items)
-			return hsize(file.filesize)
+		if role == -1:
+			return file
 		
-		return -1
+		if role == Qt.DisplayRole:
+			if column == COLUMN_NAME:
+				if isinstance(file, Directory):
+					return file
+				return file.plainpath
+			
+			if column == COLUMN_SIZE:
+				if isinstance(file, Directory):
+					items = len(self.directories[file.filename])
+					if items == 1:
+						return "1 item"
+					return "%i items" % (items)
+				return hsize(file.filesize)
+		
+		if role == Qt.DecorationRole:
+			if column == COLUMN_NAME:
+				ext = file.filename.lower()
+				if isinstance(file, Directory):
+					return QIcon.fromTheme("folder")
+				
+				return self.iconForExtension(ext)
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -332,6 +368,8 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		return QModelIndex()
 	
 	def rowCount(self, parent=QModelIndex()):
+		if parent.isValid():
+			return 0
 		return len(self.rows)
 
 
