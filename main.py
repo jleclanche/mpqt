@@ -56,6 +56,13 @@ class MPQt(QApplication):
 			self.open(name)
 	
 	def open(self, path):
+		path = os.path.abspath(path)
+		tabs = self.mainWindow.tabWidget
+		for tab in range(tabs.count()):
+			widget = tabs.widget(tab)
+			tabpath = widget.model().file.filename
+			if os.path.abspath(tabpath) == path:
+				return tabs.setCurrentWidget(widget)
 		self.mainWindow.addTab(MPQ(path))
 		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 	
