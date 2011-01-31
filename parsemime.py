@@ -12,12 +12,26 @@ comments_map = %r
 
 DEFAULT_MIME_TYPE = "application/octet-stream"
 
+def register(mime, extension, comment=""):
+	types_map[extension] = mime
+	comments_map[mime] = comment
+
+register("application/vnd.bliz-anim", ".anim", "Model ANIM data")
+register("application/vnd.bliz-dbc",  ".dbc",  "WoW database cache")
+register("application/vnd.bliz-db2",  ".db2",  "WoW database cache 2")
+register("application/vnd.bliz-mdx",  ".mdx",  "MDX model")
+register("application/vnd.bliz-mdx2", ".m2",   "MDX2 model")
+register("application/vnd.bliz-mdx3", ".m3",   "MDX3 model")
+register("application/vnd.bliz-mpq",  ".mpq",  "MPQ archive")
+register("application/vnd.bliz-skin", ".skin", "Model SKIN data")
+register("application/vnd.bliz-wmo",  ".wmo",  "World model object")
+register("image/vnd.bliz-blp",        ".blp",  "BLP image")
+
 class MimeType(object):
-	
 	def __init__(self, mime):
 		if mime not in comments_map:
 			mime = DEFAULT_MIME_TYPE
-		self.__mimeType = mime
+		self.__name = mime
 	
 	@classmethod
 	def fromName(cls, f):
@@ -31,10 +45,10 @@ class MimeType(object):
 		return cls(mime)
 	
 	def comment(self):
-		return comments_map[self.mimeType()]
+		return comments_map[self.name()]
 	
-	def mimeType(self):
-		return self.__mimeType
+	def name(self):
+		return self.__name
 """
 
 def main():
