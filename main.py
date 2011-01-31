@@ -138,14 +138,17 @@ class MainWindow(QMainWindow):
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		model = self.currentModel()
 		extractList = set()
+		
+		def addFile(f):
+			if isinstance(f, Directory):
+				for subfile in self.currentModel().directories[f.filename.lower()]:
+					addFile(subfile)
+			else:
+				extractList.add(f)
+		
 		for index in indexes:
 			file = model.data(index)
-			if isinstance(file, Directory):
-				for subfile in self.currentModel().file.list("%s\\*" % (file)):
-					# Recursively extract files within a directory
-					extractList.add(subfile)
-			else:
-				extractList.add(file)
+			addFile(file)
 		
 		total = len(extractList)
 		i = 0
