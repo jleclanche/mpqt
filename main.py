@@ -122,10 +122,15 @@ class MainWindow(QMainWindow):
 		toolbar.addAction(QIcon.fromTheme("go-next"), "Forward")
 		toolbar.addAction(QIcon.fromTheme("go-up"), "Up").triggered.connect(self.actionGoUp)
 		toolbar.addSeparator()
-		fileMask = QLineEdit()
-		fileMask.setPlaceholderText("File mask")
-		fileMask.returnPressed.connect(lambda: self.currentModel().setPath(""))
-		toolbar.addWidget(fileMask)
+		self.locationBar = QLineEdit()
+		def setLocation():
+			path = self.locationBar.text()
+			if path.startswith("/"):
+				path = path[1:]
+			if path in self.currentModel().directories:
+				self.currentModel().setPath(path)
+		self.locationBar.returnPressed.connect(lambda: setLocation)
+		toolbar.addWidget(self.locationBar)
 	
 	def actionActivateFile(self, index):
 		model = self.currentModel()
@@ -295,7 +300,9 @@ class BaseModel(object):
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
 		self.path = path
-		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(self.file.filename), path.replace("\\", "/")))
+		path = path.replace("\\", "/")
+		qApp.mainWindow.locationBar.setText("/%s" % (path))
+		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(self.file.filename), path))
 
 
 class ListModel(QAbstractListModel, BaseModel):
