@@ -401,7 +401,7 @@ class TreeModel(QAbstractItemModel, BaseModel):
 			return -item.filesize
 		
 		if column == COLUMN_NAME:
-			self.rows.sort()
+			self.rows.sort(key=lambda x: x.plainpath)
 		
 		elif column == COLUMN_SIZE:
 			self.rows.sort(key=sortBySize)
