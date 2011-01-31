@@ -94,6 +94,12 @@ class MainWindow(QMainWindow):
 		fileMenu.addSeparator()
 		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self.close, "Ctrl+Q")
 		
+		goMenu = self.menuBar().addMenu("&Go")
+		goMenu.addAction(QIcon.fromTheme("go-up"), "&Up", self.actionGoUp, "Alt+Up")
+		goMenu.addAction(QIcon.fromTheme("go-previous"), "&Back", self.actionGoUp, "Alt+Left")
+		goMenu.addAction(QIcon.fromTheme("go-next"), "&Forward", self.actionGoUp, "Alt+Right")
+		goMenu.addAction(QIcon.fromTheme("go-home"), "&Root", lambda: self.currentModel().setPath(""), "Alt+Home")
+		
 		helpMenu = self.menuBar().addMenu("&Help")
 		helpMenu.addAction(QIcon.fromTheme("help-about"), "About")
 	
@@ -154,6 +160,11 @@ class MainWindow(QMainWindow):
 			out = "Extracted %i files" % (total)
 			print "\n" + out
 			self.statusBar().showMessage(out)
+	
+	def actionGoUp(self):
+		model = self.currentModel()
+		path = model.path.split("\\")
+		model.setPath("\\".join(path[:-1]))
 	
 	def actionNew(self):
 		print "actionNew()"
