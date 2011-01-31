@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
 		f = model.data(index)
 		if isinstance(f, Directory):
 			model.setPath(f.filename)
-		else:
+		elif f:
 			print "Opening file %s not implemented" % (f.filename)
 	
 	def actionCloseTab(self, index):
@@ -282,6 +282,7 @@ class BaseModel(object):
 		self.emit(SIGNAL("layoutAboutToBeChanged()"))
 		self.rows = self.directories[path]
 		self.emit(SIGNAL("layoutChanged()"))
+		self.path = path
 		qApp.mainWindow.statusBar().showMessage("%s:/%s" % (os.path.basename(self.file.filename), path.replace("\\", "/")))
 
 
@@ -291,7 +292,7 @@ class ListModel(QAbstractListModel, BaseModel):
 		self.rows = []
 	
 	def data(self, index, role=-1):
-		if not index.isValid():
+		if index.row() > len(self.rows):
 			return
 		
 		file = self.rows[index.row()]
@@ -331,7 +332,7 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		return len(self._COLS)
 	
 	def data(self, index, role=-1):
-		if not index.isValid():
+		if index.row() > len(self.rows):
 			return
 		
 		file = self.rows[index.row()]
