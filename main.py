@@ -371,6 +371,25 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		if parent.isValid():
 			return 0
 		return len(self.rows)
+	
+	def sort(self, column, order=Qt.AscendingOrder):
+		self.emit(SIGNAL("layoutAboutToBeChanged()"))
+		
+		def sortBySize(item):
+			if isinstance(item, Directory):
+				return len(self.directories[item.filename])
+			return -item.filesize
+		
+		if column == COLUMN_NAME:
+			self.rows.sort()
+		
+		elif column == COLUMN_SIZE:
+			self.rows.sort(key=sortBySize)
+		
+		if order == Qt.AscendingOrder:
+			self.rows.reverse()
+		
+		self.emit(SIGNAL("layoutChanged()"))
 
 
 def main():
