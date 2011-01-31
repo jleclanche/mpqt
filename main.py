@@ -8,6 +8,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from storm import MPQ
 from time import sleep
+from _mime import MimeType # XXX
 
 
 # Helpers
@@ -37,6 +38,7 @@ class Directory(str):
 		instance = str.__new__(cls, name)
 		instance.filename = path
 		instance.plainpath = name
+		instance.mimetype = MimeType("inode/directory")
 		return instance
 
 
@@ -246,7 +248,7 @@ class TreeView(QTreeView):
 
 
 class BaseModel(object):
-	_COLS = ("Name", "Size")
+	_COLS = ("Name", "Size", "Type")
 	
 	def iconForExtension(self, ext):
 		if ext.endswith(".blp"):
@@ -332,6 +334,7 @@ class ListModel(QAbstractListModel, BaseModel):
 
 COLUMN_NAME = 0
 COLUMN_SIZE = 1
+COLUMN_TYPE = 2
 
 class TreeModel(QAbstractItemModel, BaseModel):
 	def __init__(self, *args):
@@ -364,6 +367,11 @@ class TreeModel(QAbstractItemModel, BaseModel):
 						return "1 item"
 					return "%i items" % (items)
 				return hsize(file.filesize)
+			
+			if column == COLUMN_TYPE:
+				if not hasattr(file, "mimetype"):
+					file.mimetype = MimeType.fromName(file.plainpath)
+				return file.mimetype.comment()
 		
 		if role == Qt.DecorationRole:
 			if column == COLUMN_NAME:
@@ -412,6 +420,9 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		
 		elif column == COLUMN_SIZE:
 			self.rows.sort(key=sortBySize)
+		
+		elif column == COLUMN_TYPE:
+			self.rows.sort(key=lambda x: x.mimetype.comment())
 		
 		if order == Qt.AscendingOrder:
 			self.rows.reverse()
