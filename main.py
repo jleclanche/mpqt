@@ -357,7 +357,7 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		return len(self._COLS)
 	
 	def data(self, index, role=-1):
-		if index.row() > len(self.rows):
+		if index.row() >= len(self.rows):
 			return
 		
 		file = self.rows[index.row()]
