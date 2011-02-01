@@ -65,8 +65,13 @@ class MPQt(QApplication):
 			tabpath = widget.model().file.filename
 			if os.path.abspath(tabpath) == path:
 				return tabs.setCurrentWidget(widget)
-		self.mainWindow.addTab(MPQ(path))
-		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
+		
+		try:
+			self.mainWindow.addTab(MPQ(path))
+			self.mainWindow.setWindowTitle("%s - MPQt" % (path))
+		except Exception, e:
+			self.mainWindow.statusBar().showMessage("Could not open %s" % (path))
+			print "Could not open %r: %s" % (path, e)
 	
 	def extract(self, file, target):
 		self.mainWindow.currentModel().file.extract(file, target)
