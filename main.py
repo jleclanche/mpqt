@@ -11,6 +11,7 @@ from time import sleep
 from _mime import MimeType # XXX
 
 import utils
+from views import TreeView
 
 
 class Directory(str):
@@ -212,37 +213,6 @@ class MainWindow(QMainWindow):
 		return view._m_model # BUG
 
 
-class ListView(QListView):
-	def __init__(self, parent=None):
-		super(ListView, self).__init__(parent)
-		self.setFlow(QListView.TopToBottom)
-		self.setLayoutMode(QListView.SinglePass)
-		self.setResizeMode(QListView.Adjust)
-		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-		self.setSelectionRectVisible(True)
-		self.setSpacing(1)
-		self.setViewMode(QListView.ListMode)
-		self.setWrapping(True)
-		self.activated.connect(parent.actionActivateFile)
-		
-		self.setContextMenuPolicy(Qt.CustomContextMenu)
-		self.customContextMenuRequested.connect(parent.createContextMenu)
-
-
-class TreeView(QTreeView):
-	def __init__(self, parent=None):
-		super(TreeView, self).__init__(parent)
-		self.setRootIsDecorated(False)
-		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-		#self.setSelectionRectVisible(True)
-		self.setSortingEnabled(True)
-		self.activated.connect(parent.actionActivateFile)
-		self.header().setResizeMode(QHeaderView.Stretch)
-		
-		self.setContextMenuPolicy(Qt.CustomContextMenu)
-		self.customContextMenuRequested.connect(parent.createContextMenu)
-
-
 class BaseModel(object):
 	_COLS = ("Name", "Size", "Type")
 	
@@ -297,8 +267,8 @@ class BaseModel(object):
 
 
 class ListModel(QAbstractListModel, BaseModel):
-	def __init__(self, *args):
-		super(ListModel, self).__init__(*args)
+	def __init__(self, parent=None):
+		super(ListModel, self).__init__(parent)
 		self.rows = []
 	
 	def data(self, index, role=-1):
@@ -335,8 +305,8 @@ COLUMN_SIZE = 1
 COLUMN_TYPE = 2
 
 class TreeModel(QAbstractItemModel, BaseModel):
-	def __init__(self, *args):
-		QAbstractItemModel.__init__(self, *args)
+	def __init__(self, parent=None):
+		super(TreeModel, self).__init__(parent)
 		self.rows = []
 	
 	def columnCount(self, parent):
