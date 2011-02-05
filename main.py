@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
 			qApp.open(str(filename))
 	
 	def addTab(self, file):
-		view = TreeView()
+		view = TreeView(self)
 		model = TreeModel()
 		model.setFile(file)
 		view.setModel(model)
@@ -213,8 +213,8 @@ class MainWindow(QMainWindow):
 
 
 class ListView(QListView):
-	def __init__(self, *args):
-		QListView.__init__(self, *args)
+	def __init__(self, parent=None):
+		super(ListView, self).__init__(self, parent)
 		self.setFlow(QListView.TopToBottom)
 		self.setLayoutMode(QListView.SinglePass)
 		self.setResizeMode(QListView.Adjust)
