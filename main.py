@@ -223,10 +223,10 @@ class ListView(QListView):
 		self.setSpacing(1)
 		self.setViewMode(QListView.ListMode)
 		self.setWrapping(True)
-		self.activated.connect(qApp.mainWindow.actionActivateFile)
+		self.activated.connect(parent.actionActivateFile)
 		
 		self.setContextMenuPolicy(Qt.CustomContextMenu)
-		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
+		self.customContextMenuRequested.connect(parent.createContextMenu)
 
 
 class TreeView(QTreeView):
@@ -236,11 +236,11 @@ class TreeView(QTreeView):
 		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 		#self.setSelectionRectVisible(True)
 		self.setSortingEnabled(True)
-		self.activated.connect(qApp.mainWindow.actionActivateFile)
+		self.activated.connect(parent.actionActivateFile)
 		self.header().setResizeMode(QHeaderView.Stretch)
 		
 		self.setContextMenuPolicy(Qt.CustomContextMenu)
-		self.customContextMenuRequested.connect(qApp.mainWindow.createContextMenu)
+		self.customContextMenuRequested.connect(parent.createContextMenu)
 
 
 class BaseModel(object):
