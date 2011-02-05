@@ -10,21 +10,7 @@ from storm import MPQ
 from time import sleep
 from _mime import MimeType # XXX
 
-
-# Helpers
-def hsize(i):
-	"Human-readable file size"
-	for x in ("%i B", "%3.1f KiB", "%3.1f MiB", "%3.1f GiB", "%3.1f TiB"):
-		if i < 1024.0:
-			return x % (i)
-		i /= 1024.0
-
-def splitpath(path):
-	"Emulate windows splitpath"
-	x = path.split("\\")
-	if len(x) == 1:
-		return "", x[0]
-	return "\\".join(x[:-1]), x[-1]
+import utils
 
 
 class Directory(str):
@@ -34,7 +20,7 @@ class Directory(str):
 	A dir is just a string (the path), but we do need to store the full path.
 	"""
 	def __new__(cls, path):
-		_, name = splitpath(path)
+		_, name = utils.splitpath(path)
 		instance = str.__new__(cls, name)
 		instance.filename = path
 		instance.plainpath = name
@@ -285,13 +271,13 @@ class BaseModel(object):
 		self.directories = {} # emulate a directory structure
 		for f in file.list():
 			self.files.append(f)
-			path, _ = splitpath(f.filename) # Emulate unix os.path.split
+			path, _ = utils.splitpath(f.filename) # Emulate unix os.path.split
 			path = path.lower()
 			def addpath(path):
 				if path not in self.directories:
 					self.directories[path] = []
 					if path:
-						parent, dirname = splitpath(path)
+						parent, dirname = utils.splitpath(path)
 						if parent not in self.directories:
 							addpath(parent)
 						self.directories[parent].append(Directory(path))
@@ -378,7 +364,7 @@ class TreeModel(QAbstractItemModel, BaseModel):
 					if items == 1:
 						return "1 item"
 					return "%i items" % (items)
-				return hsize(file.filesize)
+				return utils.hsize(file.filesize)
 			
 			if column == COLUMN_TYPE:
 				if not hasattr(file, "mimetype"):
