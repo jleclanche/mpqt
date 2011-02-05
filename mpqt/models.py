@@ -2,8 +2,8 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import QIcon
-from _mime import MimeType
-import utils
+from . import utils
+from ._mime import MimeType
 
 class Directory(str):
 	"""

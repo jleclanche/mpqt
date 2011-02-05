@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os.path
@@ -7,12 +6,11 @@ from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
 from storm import MPQ
-from time import sleep
 from _mime import MimeType # XXX
 
-import utils
-from models import TreeModel, Directory
-from views import TreeView
+from . import utils
+from .models import TreeModel, Directory
+from .views import TreeView
 
 
 class MPQt(QApplication):
@@ -199,7 +197,6 @@ class MainWindow(QMainWindow):
 		return view._m_model # BUG
 
 
-
 def main():
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -207,6 +204,3 @@ def main():
 	
 	app.mainWindow.show()
 	sys.exit(app.exec_())
-
-if __name__ == "__main__":
-	main()

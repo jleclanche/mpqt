@@ -5,6 +5,7 @@ import sys
 from xml.dom.minidom import parse
 
 tpl = """# -*- coding: utf-8 -*-
+
 import os.path
 from mimetypes import types_map
 
@@ -103,7 +104,7 @@ def main():
 		defaultIcon = getFirstTagData(element, "generic-icon")
 		out[mime] = (parent, comment, defaultIcon)
 	
-	f = open("_mime.py", "w")
+	f = open("mpqt/_mime.py", "w")
 	
 	f.write(tpl % (out))
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import os.path
 from mimetypes import types_map
 
