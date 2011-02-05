@@ -214,7 +214,7 @@ class MainWindow(QMainWindow):
 
 class ListView(QListView):
 	def __init__(self, parent=None):
-		super(ListView, self).__init__(self, parent)
+		super(ListView, self).__init__(parent)
 		self.setFlow(QListView.TopToBottom)
 		self.setLayoutMode(QListView.SinglePass)
 		self.setResizeMode(QListView.Adjust)
@@ -230,8 +230,8 @@ class ListView(QListView):
 
 
 class TreeView(QTreeView):
-	def __init__(self, *args):
-		QTreeView.__init__(self, *args)
+	def __init__(self, parent=None):
+		super(TreeView, self).__init__(parent)
 		self.setRootIsDecorated(False)
 		self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 		#self.setSelectionRectVisible(True)
