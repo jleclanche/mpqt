@@ -26,23 +26,14 @@ COLUMN_TYPE = 2
 class BaseModel(object):
 	_COLS = ("Name", "Size", "Type")
 	
-	def iconForExtension(self, ext):
-		if ext.endswith(".blp"):
-			return QIcon.fromTheme("image-x-generic")
-		
-		if ext.endswith(".dbc") or ext.endswith(".db2"):
-			return QIcon.fromTheme("x-office-spreadsheet")
-		
-		if ext.endswith(".exe"):
-			return QIcon.fromTheme("application-x-executable")
-		
-		if ext.endswith(".mp3") or ext.endswith(".ogg") or ext.endswith(".wav"):
-			return QIcon.fromTheme("audio-x-generic")
-		
-		if ext.endswith(".ttf"):
-			return QIcon.fromTheme("font-x-generic")
-		
-		return QIcon.fromTheme("text-x-generic")
+	def iconForMimeType(self, mime):
+		icon = mime.icon()
+		if QIcon.hasThemeIcon(icon):
+			return QIcon.fromTheme(icon)
+		parent = mime.parent()
+		if not parent.isDefault():
+			return self.iconForMimeType(parent)
+		return QIcon.fromTheme("application-octet-stream")
 	
 	def setFile(self, file):
 		self.file = file
@@ -94,11 +85,7 @@ class ListModel(QAbstractListModel, BaseModel):
 			return file.plainpath
 		
 		if role == Qt.DecorationRole:
-			ext = file.filename.lower()
-			if isinstance(file, Directory):
-				return QIcon.fromTheme("folder")
-			
-			return self.iconForExtension(ext)
+			return self.iconForMimeType(file.mimetype)
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -143,17 +130,13 @@ class TreeModel(QAbstractItemModel, BaseModel):
 				return utils.hsize(file.filesize)
 			
 			if column == COLUMN_TYPE:
-				if not hasattr(file, "mimetype"):
-					file.mimetype = MimeType.fromName(file.plainpath)
 				return file.mimetype.comment()
 		
 		if role == Qt.DecorationRole:
 			if column == COLUMN_NAME:
-				ext = file.filename.lower()
-				if isinstance(file, Directory):
-					return QIcon.fromTheme("folder")
-				
-				return self.iconForExtension(ext)
+				if not hasattr(file, "mimetype"):
+					file.mimetype = MimeType.fromName(file.plainpath)
+				return self.iconForMimeType(file.mimetype)
 	
 	def headerData(self, section, orientation, role):
 		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
