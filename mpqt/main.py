@@ -6,7 +6,6 @@ from optparse import OptionParser
 from PySide.QtCore import *
 from PySide.QtGui import *
 from storm import MPQ
-from _mime import MimeType # XXX
 
 from . import utils
 from .models import TreeModel, Directory
