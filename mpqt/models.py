@@ -135,7 +135,7 @@ class TreeModel(QAbstractItemModel, BaseModel):
 		if role == Qt.DecorationRole:
 			if column == COLUMN_NAME:
 				if not hasattr(file, "mimetype"):
-					file.mimetype = MimeType.fromName(file.plainpath)
+					file.mimetype = MimeType.fromName(file.plainpath) or MimeType("application/octet-stream")
 				return self.iconForMimeType(file.mimetype)
 	
 	def headerData(self, section, orientation, role):
