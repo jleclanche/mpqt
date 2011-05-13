@@ -2,7 +2,7 @@
 
 import os.path
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from PySide.QtCore import *
 from PySide.QtGui import *
 from storm import MPQ
@@ -19,12 +19,13 @@ class MPQt(QApplication):
 		self.mainWindow.setWindowTitle("MPQt")
 		self.mainWindow.resize(1024, 768)
 		
-		arguments = OptionParser()
-		_, files = arguments.parse_args(argv[1:])
+		arguments = ArgumentParser(prog="mpqt")
+		arguments.add_argument("files", nargs="+")
+		args = arguments.parse_args(argv[1:])
 		
 		self.mainWindow.statusBar().showMessage("Ready")
 		
-		for name in files:
+		for name in args.files:
 			self.open(name)
 	
 	def open(self, path):
