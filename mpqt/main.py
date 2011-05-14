@@ -20,7 +20,7 @@ class MPQt(QApplication):
 		self.mainWindow.resize(1024, 768)
 		
 		arguments = ArgumentParser(prog="mpqt")
-		arguments.add_argument("files", nargs="+")
+		arguments.add_argument("files", nargs="*")
 		args = arguments.parse_args(argv[1:])
 		
 		self.mainWindow.statusBar().showMessage("Ready")
