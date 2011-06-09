@@ -40,7 +40,7 @@ class MPQt(QApplication):
 		try:
 			self.mainWindow.addTab(MPQ(path))
 			self.mainWindow.setWindowTitle("%s - MPQt" % (path))
-		except Exception, e:
+		except Exception as e:
 			self.mainWindow.statusBar().showMessage("Could not open %s" % (path))
 			print "Could not open %r: %s" % (path, e)
 	
