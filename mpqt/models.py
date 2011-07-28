@@ -30,9 +30,6 @@ class BaseModel(object):
 		icon = mime.icon()
 		if QIcon.hasThemeIcon(icon):
 			return QIcon.fromTheme(icon)
-		parent = mime.parent()
-		if not parent.isDefault():
-			return self.iconForMimeType(parent)
 		return QIcon.fromTheme("application-octet-stream")
 	
 	def setFile(self, file):
