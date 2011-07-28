@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/vnd.bliz.mpq">
+		<comment>MPQ archive</comment>
+		<acronym>MPQ</acronym>
+		<expanded-acronym>Mo'PaQ</expanded-acronym>
+		<glob pattern="*.mpq"/>
+		<glob pattern="*.scm"/>
+		<glob pattern="*.scx"/>
+		<glob pattern="*.w3m"/>
+		<glob pattern="*.w3x"/>
+		<magic priority="50">
+			<match value="MPQ\x1A" type="string" offset="0"/>
+		</magic>
+	</mime-type>
+
+	<mime-type type="image/vnd.bliz.blp">
+		<comment>BLP image</comment>
+		<acronym>BLP</acronym>
+		<magic priority="50">
+			<match value="BLP2" type="string" offset="0"/>
+		</magic>
+		<glob pattern="*.blp"/>
+	</mime-type>
+
+	<mime-type type="model/vnd.bliz.mdx">
+		<comment>MDX model</comment>
+		<acronym>MDX</acronym>
+		<glob pattern="*.mdx"/>
+		<glob pattern="*.m2"/>
+		<glob pattern="*.m3"/>
+		<magic priority="50">
+			<match value="MD20" type="string" offset="0"/>
+		</magic>
+	</mime-type>
+
+	<mime-type type="model/vnd.bliz.wmo">
+		<comment>Warcraft model object</comment>
+		<acronym>WMO</acronym>
+		<expanded-acronym>Warcraft model object</expanded-acronym>
+		<glob pattern="*.wmo"/>
+		<magic priority="50">
+			<match value="REVM" type="string" offset="0"/>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/x-wdbc">
+		<comment>WDBC archive</comment>
+		<glob pattern="*.dba"/>
+		<glob pattern="*.dbc"/>
+		<glob pattern="*.db2"/>
+		<glob pattern="*.wdb"/>
+		<magic priority="50">
+			<match value="WDBC" type="string" offset="0"/>
+			<match value="BDNW" type="string" offset="0"/>
+			<match value="BOMW" type="string" offset="0"/>
+			<match value="BOGW" type="string" offset="0"/>
+			<match value="CPNW" type="string" offset="0"/>
+			<match value="NDRW" type="string" offset="0"/>
+			<match value="TSQW" type="string" offset="0"/>
+			<match value="XTIW" type="string" offset="0"/>
+			<match value="XTPW" type="string" offset="0"/>
+		</magic>
+	</mime-type>
+</mime-info>
