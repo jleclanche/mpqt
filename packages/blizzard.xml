@@ -44,7 +44,7 @@
 		</magic>
 	</mime-type>
 
-	<mime-type type="application/x-wdbc">
+	<mime-type type="application/vnd.bliz.wdbc">
 		<comment>WDBC archive</comment>
 		<glob pattern="*.dba"/>
 		<glob pattern="*.dbc"/>
