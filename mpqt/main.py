@@ -18,16 +18,16 @@ class MPQt(QApplication):
 		self.mainWindow = MainWindow()
 		self.mainWindow.setWindowTitle("MPQt")
 		self.mainWindow.resize(1024, 768)
-		
+
 		arguments = ArgumentParser(prog="mpqt")
 		arguments.add_argument("files", nargs="*")
 		args = arguments.parse_args(argv[1:])
-		
+
 		self.mainWindow.statusBar().showMessage("Ready")
-		
+
 		for name in args.files:
 			self.open(name)
-	
+
 	def open(self, path):
 		path = os.path.abspath(path)
 		tabs = self.mainWindow.tabWidget
@@ -36,32 +36,32 @@ class MPQt(QApplication):
 			tabpath = widget.model().file.filename
 			if os.path.abspath(tabpath) == path:
 				return tabs.setCurrentWidget(widget)
-		
+
 		try:
 			self.mainWindow.addTab(MPQ(path))
 			self.mainWindow.setWindowTitle("%s - MPQt" % (path))
 		except Exception as e:
 			self.mainWindow.statusBar().showMessage("Could not open %s" % (path))
 			print "Could not open %r: %s" % (path, e)
-	
+
 	def extract(self, file, target):
 		self.mainWindow.currentModel().file.extract(file, target)
 
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
-		QMainWindow.__init__(self, *args)
-		
+		super(MainWindow, self).__init__(*args)
+
 		self.__addMenus()
 		self.__addToolbar()
-		
+
 		self.tabWidget = QTabWidget()
 		self.tabWidget.setDocumentMode(True)
 		self.tabWidget.setMovable(True)
 		self.tabWidget.setTabsClosable(True)
 		self.tabWidget.tabCloseRequested.connect(self.actionCloseTab)
 		self.setCentralWidget(self.tabWidget)
-	
+
 	def __addMenus(self):
 		def closeOrExit():
 			index = self.tabWidget.currentIndex()
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
 				self.close()
 			else:
 				self.actionCloseTab(index)
-		
+
 		fileMenu = self.menuBar().addMenu("&File")
 		fileMenu.addAction(QIcon.fromTheme("document-new"), "&New", self.actionNew, "Ctrl+N")
 		fileMenu.addAction(QIcon.fromTheme("document-open"), "&Open...", self.actionOpen, "Ctrl+O")
@@ -78,16 +78,16 @@ class MainWindow(QMainWindow):
 		fileMenu.addAction(QIcon.fromTheme("window-close"), "&Close", closeOrExit, "Ctrl+W")
 		fileMenu.addSeparator()
 		fileMenu.addAction(QIcon.fromTheme("application-exit"), "&Quit", self.close, "Ctrl+Q")
-		
+
 		goMenu = self.menuBar().addMenu("&Go")
 		goMenu.addAction(QIcon.fromTheme("go-up"), "&Up", self.actionGoUp, "Alt+Up")
 		goMenu.addAction(QIcon.fromTheme("go-previous"), "&Back", self.actionGoUp, "Alt+Left")
 		goMenu.addAction(QIcon.fromTheme("go-next"), "&Forward", self.actionGoUp, "Alt+Right")
 		goMenu.addAction(QIcon.fromTheme("go-home"), "&Root", lambda: self.currentModel().setPath(""), "Alt+Home")
-		
+
 		helpMenu = self.menuBar().addMenu("&Help")
 		helpMenu.addAction(QIcon.fromTheme("help-about"), "About")
-	
+
 	def __addToolbar(self):
 		toolbar = self.addToolBar("Toolbar")
 		toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
 				self.currentModel().setPath(path)
 		self.locationBar.returnPressed.connect(lambda: setLocation)
 		toolbar.addWidget(self.locationBar)
-	
+
 	def actionActivateFile(self, index):
 		model = self.currentModel()
 		f = model.data(index)
@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
 			model.setPath(f.filename)
 		elif f:
 			print "Opening file %s not implemented" % (f.filename)
-	
+
 	def actionCloseTab(self, index):
 		widget = self.tabWidget.widget(index)
 		# BUG crashes in FreeMPQArchive()
@@ -123,23 +123,23 @@ class MainWindow(QMainWindow):
 		#del widget.model().file
 		del widget
 		self.tabWidget.removeTab(index)
-	
+
 	def actionExtract(self):
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
 		model = self.currentModel()
 		extractList = set()
-		
+
 		def addFile(f):
 			if isinstance(f, Directory):
 				for subfile in self.currentModel().directories[f.filename.lower()]:
 					addFile(subfile)
 			else:
 				extractList.add(f)
-		
+
 		for index in indexes:
 			file = model.data(index)
 			addFile(file)
-		
+
 		total = len(extractList)
 		i = 0
 		lenOut = 0
@@ -153,25 +153,25 @@ class MainWindow(QMainWindow):
 			self.statusBar().showMessage(out)
 			sys.stdout.flush()
 			qApp.extract(file, os.path.basename(model.file.filename))
-		
+
 		if total:
 			out = "Extracted %i files" % (total)
 			print "\n" + out
 			self.statusBar().showMessage(out)
-	
+
 	def actionGoUp(self):
 		model = self.currentModel()
 		path = model.path.split("\\")
 		model.setPath("\\".join(path[:-1]))
-	
+
 	def actionNew(self):
 		print "actionNew()"
-	
+
 	def actionOpen(self):
 		filename, filters = QFileDialog.getOpenFileName(self, "Open file", "", "Blizzard MPQ archives (*.mpq);;All files (*.*)")
 		if filename:
 			qApp.open(str(filename))
-	
+
 	def addTab(self, file):
 		view = TreeView(self)
 		model = TreeModel()
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
 		view.setModel(model)
 		view._m_model = model # BUG
 		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
-	
+
 	def createContextMenu(self, pos):
 		contextMenu = QMenu()
 		indexes = self.tabWidget.currentWidget().selectedIndexes()
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
 			contextMenu.addSeparator()
 			contextMenu.addAction(QIcon.fromTheme("document-properties"), "Properties", lambda: None, "Alt+Return")
 		contextMenu.exec_(self.tabWidget.currentWidget().mapToGlobal(pos))
-	
+
 	def currentModel(self):
 		view = self.tabWidget.currentWidget()
 		return view._m_model # BUG
@@ -201,6 +201,6 @@ def main():
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 	app = MPQt(sys.argv)
-	
+
 	app.mainWindow.show()
 	sys.exit(app.exec_())
