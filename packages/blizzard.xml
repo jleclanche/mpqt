@@ -4,6 +4,7 @@
 		<comment>MPQ archive</comment>
 		<acronym>MPQ</acronym>
 		<expanded-acronym>Mo'PaQ</expanded-acronym>
+		<generic-icon name="package-x-generic"/>
 		<glob pattern="*.mpq"/>
 		<glob pattern="*.scm"/>
 		<glob pattern="*.scx"/>
@@ -46,6 +47,7 @@
 
 	<mime-type type="application/vnd.bliz.wdbc">
 		<comment>WDBC archive</comment>
+		<generic-icon name="x-office-spreadsheet"/>
 		<glob pattern="*.dba"/>
 		<glob pattern="*.dbc"/>
 		<glob pattern="*.db2"/>
