@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 from PySide.QtCore import *
 from PySide.QtGui import *
-from storm import MPQ
+from mpq import MPQFile
 
 from . import utils
 from .models import TreeModel, Directory
@@ -33,16 +33,16 @@ class MPQt(QApplication):
 		tabs = self.mainWindow.tabWidget
 		for tab in range(tabs.count()):
 			widget = tabs.widget(tab)
-			tabpath = widget.model().file.filename
+			tabpath = widget.model().file.name()
 			if os.path.abspath(tabpath) == path:
 				return tabs.setCurrentWidget(widget)
 
-		try:
-			self.mainWindow.addTab(MPQ(path))
-			self.mainWindow.setWindowTitle("%s - MPQt" % (path))
-		except Exception as e:
-			self.mainWindow.statusBar().showMessage("Could not open %s" % (path))
-			print "Could not open %r: %s" % (path, e)
+		self.mainWindow.addTab(MPQFile(path))
+		self.mainWindow.setWindowTitle("%s - MPQt" % (path))
+		#try:
+		#except Exception as e:
+			#self.mainWindow.statusBar().showMessage("Could not open %s" % (path))
+			#print "Could not open %r: %s" % (path, e)
 
 	def extract(self, file, target):
 		self.mainWindow.currentModel().file.extract(file, target)
@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
 	def __init__(self, *args):
 		super(MainWindow, self).__init__(*args)
 
+		QIcon.setThemeName("oxygen")
 		self.__addMenus()
 		self.__addToolbar()
 
@@ -118,9 +119,8 @@ class MainWindow(QMainWindow):
 
 	def actionCloseTab(self, index):
 		widget = self.tabWidget.widget(index)
-		# BUG crashes in FreeMPQArchive()
-		#widget.model().file.close()
-		#del widget.model().file
+		widget.model().file.close()
+		del widget.model().file
 		del widget
 		self.tabWidget.removeTab(index)
 
@@ -178,7 +178,7 @@ class MainWindow(QMainWindow):
 		model.setFile(file)
 		view.setModel(model)
 		view._m_model = model # BUG
-		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.filename))
+		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.name()))
 
 	def createContextMenu(self, pos):
 		contextMenu = QMenu()

@@ -6,10 +6,3 @@ def hsize(i):
 		if i < 1024.0:
 			return x % (i)
 		i /= 1024.0
-
-def splitpath(path):
-	"Emulate windows splitpath"
-	x = path.split("\\")
-	if len(x) == 1:
-		return "", x[0]
-	return "\\".join(x[:-1]), x[-1]
