@@ -3,8 +3,8 @@
 import os.path
 import sys
 from argparse import ArgumentParser
-from PySide.QtCore import *
-from PySide.QtGui import *
+from PyQt.QtCore import *
+from PyQt.QtGui import *
 from mpq import MPQFile
 
 from . import utils
@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
 		if isinstance(f, Directory):
 			model.setPath(f.filename)
 		elif f:
-			print "Opening file %s not implemented" % (f.filename)
+			print("Opening file %s not implemented" % (f.filename))
 
 	def actionCloseTab(self, index):
 		widget = self.tabWidget.widget(index)
@@ -146,17 +146,17 @@ class MainWindow(QMainWindow):
 		for file in extractList:
 			i += 1
 			pc = (i / total) * 100
-			print "\r" + " " * lenOut,
+			print("\r" + " " * lenOut, endl="")
 			out = "Extracting %i/%i (%i%%)... %s" % (i, total, pc, file)
-			lenOut = len(out)
-			print "\r" + out,
+			lenOut = len(out, endl="")
+			print("\r" + out)
 			self.statusBar().showMessage(out)
 			sys.stdout.flush()
 			qApp.extract(file, os.path.basename(model.file.filename))
 
 		if total:
 			out = "Extracted %i files" % (total)
-			print "\n" + out
+			print("\n" + out)
 			self.statusBar().showMessage(out)
 
 	def actionGoUp(self):
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
 		model.setPath("\\".join(path[:-1]))
 
 	def actionNew(self):
-		print "actionNew()"
+		pass
 
 	def actionOpen(self):
 		filename, filters = QFileDialog.getOpenFileName(self, "Open file", "", "Blizzard MPQ archives (*.mpq);;All files (*.*)")
@@ -177,7 +177,7 @@ class MainWindow(QMainWindow):
 		model = TreeModel()
 		model.setFile(file)
 		view.setModel(model)
-		view._m_model = model # BUG
+		view._m_model = model  # BUG
 		self.tabWidget.addTab(view, QIcon.fromTheme("package-x-generic"), os.path.basename(file.name()))
 
 	def createContextMenu(self, pos):
@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
 
 	def currentModel(self):
 		view = self.tabWidget.currentWidget()
-		return view._m_model # BUG
+		return view._m_model  # BUG
 
 
 def main():
